@@ -28,6 +28,8 @@ import { Text_Demo }
   from "./examples/text-demo.js"
 import { Transforms_Sandbox }
   from "./examples/transforms-sandbox.js"
+import { Final }
+  from "./final-project.js"
 
 Object.assign( defs,
                      { Axes_Viewer, Axes_Viewer_Test_Scene },
@@ -43,7 +45,7 @@ Object.assign( defs,
 
 // (Can define Main_Scene's class here)
 
-const Main_Scene = Transforms_Sandbox;
+const Main_Scene = Obj_File_Demo;
 const Additional_Scenes = [];
 
 export { Main_Scene, Additional_Scenes, Canvas_Widget, Code_Widget, Text_Widget, defs }
