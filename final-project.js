@@ -27,7 +27,7 @@ export class Final extends Scene {
             new CustomShader(), {
                 ambient: .5, diffusivity: 0.1, specularity: 0.1,
                 albedo: new Texture("assets/wood_color.jpg","LINEAR_MIPMAP_LINEAR"),
-                //normal: new Texture("assets/wood_normal.jpg", "LINEAR_MIPMAP_LINEAR")
+                normal: new Texture("assets/wood_normal.jpg", "LINEAR_MIPMAP_LINEAR")
                 }
             ),
         }
@@ -94,7 +94,7 @@ class CustomShader extends Phong_Shader {
             void main(){
                 vec4 tex_color = texture2D( albedo, f_tex_coord);
 
-                vec4 normal_sample = texture2D(normal_map, f_tex_coord);
+                vec4 normal_sample = texture2D(albedo, f_tex_coord);
                 vec3 normal = normalize(normal_sample.xyz);
 
                 if( tex_color.w < .01 ) discard;
@@ -113,14 +113,14 @@ class CustomShader extends Phong_Shader {
       {
         context.uniform1i( gpu_addresses.albedo, 0);
                                   // For this draw, use the texture image from correct the GPU buffer:
-        material.albedo.activate( context );
+        material.albedo.activate(context, 0);
       }
 
       // Apply normal map
       if ( material.normal && material.normal.ready )
       {
-          context.uniform1i(gpu_addresses.normal, 1);
-          material.normal.activate(context);
+          context.uniform1i(gpu_addresses.normal_map, 1);
+          material.normal.activate(context, 1);
       }
     }
 }
