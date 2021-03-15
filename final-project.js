@@ -74,13 +74,10 @@ class CustomShader extends Phong_Shader {
         uniform mat4 projection_camera_model_transform;
 
         void main()
-          {                                                                   // The vertex's final resting place (in NDCS):
+          {
             gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
-                                                                              // The final normal vector in screen space.
-            N = normalize( mat3( model_transform ) * normal / squared_scale);
-            
+            N = normalize( mat3( model_transform ) * normal / squared_scale);   // True normal
             vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
-                                              // Turn the per-vertex texture coordinate into an interpolated variable.
             f_tex_coord = texture_coord;
           } ` ;
     }
@@ -98,9 +95,7 @@ class CustomShader extends Phong_Shader {
                 vec3 normal = normalize(normal_sample.xyz);
 
                 if( tex_color.w < .01 ) discard;
-                                                                         // Compute an initial (ambient) color:
                 gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
-                                                                         // Compute the final color with contributions from lights:
                 gl_FragColor.xyz += phong_model_lights( normalize( normal ), vertex_worldspace );
         } `;
     }
