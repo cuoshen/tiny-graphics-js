@@ -67,7 +67,8 @@ export class Final extends Scene {
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         //Sphere
-        this.shapes.sphere.draw(context, program_state, model_transform, this.materials.bump_mapped_stone);
+        model_transform = model_transform.times(Mat4.rotation(t,1,1,1));
+        this.shapes.cube.draw(context, program_state, model_transform, this.materials.bump_mapped_stone);
     }
 }
 
