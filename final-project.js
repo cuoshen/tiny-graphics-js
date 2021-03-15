@@ -67,7 +67,7 @@ export class Final extends Scene {
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         //Sphere
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.bump_mapped_stone);
+        this.shapes.sphere.draw(context, program_state, model_transform, this.materials.bump_mapped_stone);
     }
 }
 
@@ -165,7 +165,7 @@ class Bump_Mapped extends Phong_Shader {
 
                 vec3 bumped = vertex_worldspace;
                 vec4 bump_sample = texture2D(bump, f_tex_coord);
-                bumped += bump_sample.xyz;
+                bumped += N.xyz * bump_sample.x; // bump by true normal
 
                 if( tex_color.w < .01 ) discard;
                 gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
