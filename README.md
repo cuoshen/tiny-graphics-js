@@ -9,8 +9,6 @@ Zhengyang Liu 105114114
 
 The main inspiration of our project comes from various modern AAA titles, such as DOOM and Anthem, which employs many advanced technologies while shading the environment. Our project simulates a rough rock surface populated by hot, molten lava.
 
-![image-20210322004644604](docs\lava.png)
-
 ## Introduction to Design and Implementation
 
 Unlike many of the previous final project submission, our project put a stronger emphasis on the underlying rendering technology. First, we can't have lava without the underlying rocky surface, therefore we first give a basic implementation of a textured, normal mapped phong shader for the rocks. The rock texture comes from a free source online.
