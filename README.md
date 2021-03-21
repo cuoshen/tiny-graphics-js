@@ -27,15 +27,27 @@ Given the static lava rendering, additional experimental techniques are also use
 
 ### Feature 1: height-generated lava
 
+This implementation is a simplified version implemented by the famous AAA multiplayer game Anthem, which is examined in great detail in a GDC 2019 talk.
 
+![image-20210322011017940](docs\code_example_1.png)
+
+We have 3 textures controlling different aspects of rendering. The albedo texture serves as a texture for diffuse color, normal texture stores the normal at each point, whereas the bump map stores the height of each point. Combined, the final rendered product will be a seemingly "rough" surface while the underlying primitive stays a flat plane. In our implementation, only the first channel of the height map is used - it is that "height" of a point directly above the "true position", the updated position is for calculating lighting model only.
+
+If a fragment is found to be below a certain threshold (the "sea level" of the lava), then we immediately disregard the result from the phong lighting model. That is because we want the lava to be unlit. (Or emissive, if we have any sort of global illumination) The color of the lava is based only on the "depth" of lava at a point, the deeper the lava, the hotter the region is thus the more bright the lava appears to be. We linearly interpolate from black to a bright lava color, using the parameter which is height rescaled to [0,1].
 
 ### Experimental feature 2: flow map
+
+The flow map serves as an experimental method to animate the lava flow. It is explained in detail in a GDC 2018 talk.
+
+![image-20210322015413840](docs\code_example_2.png)
+
+![image-20210322015656878](docs\flow_map_concept.png)
 
 
 
 ## Bonus: possible optimizations, and why we did not do that
 
-Since we calculate height as distance directly above a fragment, only its x(or red) value is used. In the flow map, since it represents the speed vector of uv, only xy(rg) channels are used. We could potentially put height as the z(blue) channel in the flow map, thus reducing texture VRAM cost by a third by reducing one texture. We did not do that because it is potentially confusing for the reader.
+Since we calculate height as distance directly above a fragment, only its x(or red) value is used. In the flow map, since it represents the speed vector of uv, only xy(rg) channels are used. We could potentially put height as the z(blue) channel in the flow map, thus reducing texture VRAM cost by 1/4 by reducing one texture. We did not do that because it is potentially confusing for the reader.
 
 ## References
 
