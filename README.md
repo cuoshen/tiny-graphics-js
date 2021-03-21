@@ -3,6 +3,7 @@
 ## Team member info
 
 Xiao Yang 305346127
+Zhengyang Liu 105114114
 
 ## Introduction to Design and Implementation
 
