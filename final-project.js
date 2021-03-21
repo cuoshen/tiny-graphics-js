@@ -15,6 +15,7 @@ export class Final extends Scene {
         this.hasLava = false;
         this.lit = true;
         this.animatedLava = false;
+        this.cube = true;
         this.initial_lava_color = color(1.0, 69/256, 0.0, 1.0);
         this.current_lava_color = this.initial_lava_color;
 
@@ -51,17 +52,18 @@ export class Final extends Scene {
     }
 
     make_control_panel() {
-        this.key_triggered_button("Toggle Lava", ["Control", "0"], () => this.hasLava = !this.hasLava);
+        this.key_triggered_button("Toggle Lava", ["Control", "1"], () => this.hasLava = !this.hasLava);
         this.new_line();
-        this.key_triggered_button("Toggle Highlight", ["Control", "0"], () => this.lit = !this.lit);
+        this.key_triggered_button("Toggle Highlight", ["Control", "2"], () => this.lit = !this.lit);
         this.new_line();
-        this.key_triggered_button("Toggle Lava Color Blending", ["Control", "0"], () => this.animatedLava = !this.animatedLava);
+        this.key_triggered_button("Toggle Lava Color Blending", ["Control", "3"], () => this.animatedLava = !this.animatedLava);
         this.new_line();
+        this.key_triggered_button("Toggle Cube/Sphere", ["Control", "4"], () => this.cube = !this.cube);
     }
 
     interpolate_lava_color(t) {
-        let lambda = 0.5*(1 + Math.cos(t * 2.0));
-        return (color(1.0, lambda * 120/256, lambda * 100/256, 1,0));
+        let lambda = (1 + Math.cos(t));
+        return (color(1.0, lambda * 40/256, 0, 1,0));
     }
 
     display(context, program_state) {
@@ -87,7 +89,7 @@ export class Final extends Scene {
             program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 0)];
         }
 
-        //Sphere
+        //Draw
         model_transform = model_transform.times(Mat4.rotation(t,1,1,1));
 
         if (this.animatedLava) {
@@ -99,7 +101,13 @@ export class Final extends Scene {
         } else {
             this.activeMaterial = this.materials.normal_mapped_stone;
         }
-        this.shapes.cube.draw(context, program_state, model_transform, this.activeMaterial);
+
+        if(this.cube) {
+            this.shapes.cube.draw(context, program_state, model_transform, this.activeMaterial);
+        }
+        else {
+            this.shapes.sphere.draw(context, program_state, model_transform, this.activeMaterial);
+        }
     }
 }
 
