@@ -15,7 +15,8 @@ export class Final extends Scene {
         this.hasLava = false;
         this.lit = true;
         this.animatedLava = false;
-        this.current_lava_color = color(1.0, 69/256, 0.0, 1.0);
+        this.initial_lava_color = color(1.0, 69/256, 0.0, 1.0);
+        this.current_lava_color = this.initial_lava_color;
 
         this.shapes = {
             sphere: new defs.Subdivision_Sphere(4),
@@ -54,6 +55,13 @@ export class Final extends Scene {
         this.new_line();
         this.key_triggered_button("Toggle Highlight", ["Control", "0"], () => this.lit = !this.lit);
         this.new_line();
+        this.key_triggered_button("Toggle Lava Color Blending", ["Control", "0"], () => this.animatedLava = !this.animatedLava);
+        this.new_line();
+    }
+
+    interpolate_lava_color(t) {
+        let lambda = 0.5*(1 + Math.cos(t * 2.0));
+        return (color(1.0, lambda * 120/256, lambda * 100/256, 1,0));
     }
 
     display(context, program_state) {
@@ -81,8 +89,13 @@ export class Final extends Scene {
 
         //Sphere
         model_transform = model_transform.times(Mat4.rotation(t,1,1,1));
+
+        if (this.animatedLava) {
+            this.current_lava_color = this.interpolate_lava_color(t);
+        }
+
         if (this.hasLava) {
-            this.activeMaterial = this.materials.bump_mapped_lava;
+            this.activeMaterial = this.materials.bump_mapped_lava.override({lava_color: this.current_lava_color});
         } else {
             this.activeMaterial = this.materials.normal_mapped_stone;
         }
