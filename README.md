@@ -29,7 +29,7 @@ Given the static lava rendering, additional experimental techniques are also use
 
 This implementation is a simplified version implemented by the famous AAA multiplayer game Anthem, which is examined in great detail in a GDC 2019 talk.
 
-![image-20210322011017940](docs\code_example_1.png)
+![image-20210322011017940](docs/code_example_1.png)
 
 We have 3 textures controlling different aspects of rendering. The albedo texture serves as a texture for diffuse color, normal texture stores the normal at each point, whereas the bump map stores the height of each point. Combined, the final rendered product will be a seemingly "rough" surface while the underlying primitive stays a flat plane. In our implementation, only the first channel of the height map is used - it is that "height" of a point directly above the "true position", the updated position is for calculating lighting model only.
 
@@ -39,11 +39,15 @@ If a fragment is found to be below a certain threshold (the "sea level" of the l
 
 The flow map serves as an experimental method to animate the lava flow. It is explained in detail in a GDC 2018 talk.
 
-![image-20210322015413840](docs\code_example_2.png)
+![image-20210322015413840](docs/code_example_2.png)
 
-![image-20210322015656878](docs\flow_map_concept.png)
+![image-20210322015656878](docs/flow_map_concept.png)
 
+Back in assignment 2 of the course, we animate the texture coordinates by directly multiplying with a uniform rotation matrix. The idea of a flow map is, the transformation on the texture coordinates can be baked, or cached, into a texture, just like normal and height. The x channel of the flow map tells us how do we want to displace the u texture coordinate, while the y channel controls the v coordinate.
 
+At each fragment and for each direction, the value between [0,1] is first normalized into [-0.5, 0.5], so that we can move both ways, we then multiply by flow speed and time to get desired displacement in that direction. The original texture coordinate is used once to get an updated uv-coordinate, which is used in downstream texture sampling of color, normal and height.
+
+We could control the "flow" of the lava arbitrarily with the flow map.
 
 ## Bonus: possible optimizations, and why we did not do that
 
