@@ -6,6 +6,53 @@ const {
 
 const {Cube, Phong_Shader, Textured_Phong} = defs;
 
+export class Text_Line extends Shape                
+{                           // **Text_Line** embeds text in the 3D world, using a crude texture 
+                            // method.  This Shape is made of a horizontal arrangement of quads.
+                            // Each is textured over with images of ASCII characters, spelling 
+                            // out a string.  Usage:  Instantiate the Shape with the desired
+                            // character line width.  Then assign it a single-line string by calling
+                            // set_string("your string") on it. Draw the shape on a material
+                            // with full ambient weight, and text.png assigned as its texture 
+                            // file.  For multi-line strings, repeat this process and draw with
+                            // a different matrix.
+  constructor( max_size )
+    { super( "position", "normal", "texture_coord" );
+      this.max_size = max_size;
+      var object_transform = Mat4.identity();
+      for( var i = 0; i < max_size; i++ )
+      {                                       // Each quad is a separate Square instance:
+        defs.Square.insert_transformed_copy_into( this, [], object_transform );
+        object_transform.post_multiply( Mat4.translation( 1.5,0,0 ) );
+      }
+    }
+  set_string( line, context )
+    {           // set_string():  Call this to overwrite the texture coordinates buffer with new 
+                // values per quad, which enclose each of the string's characters.
+      this.arrays.texture_coord = [];
+      for( var i = 0; i < this.max_size; i++ )
+        {
+          var row = Math.floor( ( i < line.length ? line.charCodeAt( i ) : ' '.charCodeAt() ) / 16 ),
+              col = Math.floor( ( i < line.length ? line.charCodeAt( i ) : ' '.charCodeAt() ) % 16 );
+
+          var skip = 3, size = 32, sizefloor = size - skip;
+          var dim = size * 16,  
+              left  = (col * size + skip) / dim,      top    = (row * size + skip) / dim,
+              right = (col * size + sizefloor) / dim, bottom = (row * size + sizefloor + 5) / dim;
+
+          this.arrays.texture_coord.push( ...Vector.cast( [ left,  1-bottom], [ right, 1-bottom ],
+                                                          [ left,  1-top   ], [ right, 1-top    ] ) );
+        }
+      if( !this.existing )
+        { this.copy_onto_graphics_card( context );
+          this.existing = true;
+        }
+      else
+        this.copy_onto_graphics_card( context, ["texture_coord"], false );
+    }
+}
+
+
 export class Final extends Scene {
 
     constructor() {
@@ -29,11 +76,13 @@ export class Final extends Scene {
         this.icecreamSpeeds = [];
         this.lastSpawnTime = 0;
         this.gameOver = false;
+        this.highScore = 0;
 
         this.shapes = {
             player: new defs.Cone_Tip(15, 15),
             cube: new Cube(),
-            icecream: new defs.Subdivision_Sphere(4)
+            icecream: new defs.Subdivision_Sphere(4),
+            text: new Text_Line( 35 )
         };
 
         // *** Materials
@@ -83,6 +132,9 @@ export class Final extends Scene {
             }
             )
         }
+        const texture = new defs.Textured_Phong( 1 );
+        this.text_image = new Material( texture, { ambient: 1, diffusivity: 0, specularity: 0,
+                                                 texture: new Texture( "assets/text.png" ) });
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 30, 10), vec3(0, 10, 0), vec3(0, 1, 0));
         this.initial_camera_location = this.initial_camera_location.times(Mat4.translation(0, 15, 7.5, 1));
@@ -94,6 +146,8 @@ export class Final extends Scene {
         this.key_triggered_button("Toggle Highlight", ["Control", "2"], () => this.lit = !this.lit);
         this.new_line();
         this.key_triggered_button("Toggle Lava Color Blending", ["Control", "3"], () => this.animatedLava = !this.animatedLava);
+        this.new_line();
+        this.key_triggered_button("Toggle Lava Flow", ["Control", "4"], () => this.lavaFlow = !this.lavaFlow);
         this.new_line();
         this.key_triggered_button( "Forward", [ "w" ], () => this.speed[2] = -.4, undefined, () => this.speed[2] = 0 );
         this.key_triggered_button( "Back", [ "s" ], () => this.speed[2] = .4, undefined, () => this.speed[2] = 0 );
@@ -182,14 +236,14 @@ export class Final extends Scene {
         this.shapes.player.draw(context, program_state, this.playerLocation, this.materials.cone);
         
         //Game Logic
-        if(this.lives <= 0) {
+        if(this.lives <= 0 && !this.gameOver) {
             this.gameOver = true;
+            this.highScore = Math.max(this.highScore, this.score);
             this.icecreamList = [];
             this.icecreamColors = [];
             this.icecreamSpeeds = [];
         }
         if(t > this.lastSpawnTime + 2 && !this.gameOver) {
-            console.log(this.score);
             this.lastSpawnTime = t;
             this.spawnIceCream();
         }
@@ -219,6 +273,24 @@ export class Final extends Scene {
         for (i = 0; i < this.icecreamList.length; i++) {
             this.shapes.icecream.draw(context, program_state, this.icecreamList[i], this.materials.phong.override({color: this.icecreamColors[i]}));
             this.icecreamList[i] = this.icecreamList[i].times(Mat4.translation(0, this.icecreamSpeeds[i], 0, 1));
+        }
+        let textLocation = Mat4.look_at(vec3(0, -30, 10), vec3(0, 10, 0), vec3(0, 1, 0));
+        textLocation = textLocation.times(Mat4.translation(-10, -30, 10, 1));
+        this.shapes.text.set_string( `Score: ${this.score}`, context.context );
+        this.shapes.text.draw( context, program_state, textLocation.times(Mat4.scale(0.5, 0.5, 0.5, 1)), this.text_image );
+        textLocation = textLocation.times(Mat4.translation(0, -1, 0, 1));
+        this.shapes.text.set_string( `Lives: ${this.lives}`, context.context );
+        this.shapes.text.draw( context, program_state, textLocation.times(Mat4.scale(0.5, 0.5, 0.5, 1)), this.text_image );
+        if(this.gameOver) {
+            textLocation = textLocation.times(Mat4.translation(5, 6.5, 0, 1))
+            this.shapes.text.set_string(`High Score: ${this.highScore}`, context.context);
+            this.shapes.text.draw( context, program_state, textLocation.times(Mat4.scale(0.5, 0.5, 0.5, 1)), this.text_image );
+            textLocation = textLocation.times(Mat4.translation(-1, -1.5, 0, 1));
+            this.shapes.text.set_string( "GAME OVER", context.context );
+            this.shapes.text.draw( context, program_state, textLocation, this.text_image );
+            textLocation = textLocation.times(Mat4.translation(-0.25, -1, 0, 1));
+            this.shapes.text.set_string( "Press r to restart", context.context );
+            this.shapes.text.draw( context, program_state, textLocation.times(Mat4.scale(0.5, 0.5, 0.5, 1)), this.text_image );
         }
     }
 }
