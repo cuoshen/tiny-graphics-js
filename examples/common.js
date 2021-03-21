@@ -774,14 +774,14 @@ class Movement_Controls extends Scene
     {                                 // make_control_panel(): Sets up a panel of interactive HTML elements, including
                                       // buttons with key bindings for affecting this scene, and live info readouts.
       this.control_panel.innerHTML += "Click and drag the scene to <br> spin your viewpoint around it.<br>";
-      this.key_triggered_button( "Up",     [ " " ], () => this.thrust[1] = -1, undefined, () => this.thrust[1] = 0 );
-      this.key_triggered_button( "Forward",[ "w" ], () => this.thrust[2] =  1, undefined, () => this.thrust[2] = 0 );
-      this.new_line();
-      this.key_triggered_button( "Left",   [ "a" ], () => this.thrust[0] =  1, undefined, () => this.thrust[0] = 0 );
-      this.key_triggered_button( "Back",   [ "s" ], () => this.thrust[2] = -1, undefined, () => this.thrust[2] = 0 );
-      this.key_triggered_button( "Right",  [ "d" ], () => this.thrust[0] = -1, undefined, () => this.thrust[0] = 0 );
-      this.new_line();
-      this.key_triggered_button( "Down",   [ "z" ], () => this.thrust[1] =  1, undefined, () => this.thrust[1] = 0 ); 
+      //this.key_triggered_button( "Up",     [ " " ], () => this.thrust[1] = -1, undefined, () => this.thrust[1] = 0 );
+      //this.key_triggered_button( "Forward",[ "w" ], () => this.thrust[2] =  1, undefined, () => this.thrust[2] = 0 );
+      //this.new_line();
+      //this.key_triggered_button( "Left",   [ "a" ], () => this.thrust[0] =  1, undefined, () => this.thrust[0] = 0 );
+      //this.key_triggered_button( "Back",   [ "s" ], () => this.thrust[2] = -1, undefined, () => this.thrust[2] = 0 );
+      //this.key_triggered_button( "Right",  [ "d" ], () => this.thrust[0] = -1, undefined, () => this.thrust[0] = 0 );
+      //this.new_line();
+      //this.key_triggered_button( "Down",   [ "z" ], () => this.thrust[1] =  1, undefined, () => this.thrust[1] = 0 ); 
 
       const speed_controls = this.control_panel.appendChild( document.createElement( "span" ) );
       speed_controls.style.margin = "30px";
@@ -802,9 +802,6 @@ class Movement_Controls extends Scene
                                                   // The facing directions are surprisingly affected by the left hand rule:
       this.live_string( box => box.textContent = "Facing: " + ( ( this.z_axis[0] > 0 ? "West " : "East ")
                    + ( this.z_axis[1] > 0 ? "Down " : "Up " ) + ( this.z_axis[2] > 0 ? "North" : "South" ) ) );
-      this.new_line();
-      this.key_triggered_button( "Go to world origin", [ "r" ], () => { this. matrix().set_identity( 4,4 );
-                                                                        this.inverse().set_identity( 4,4 ) }, "orange" );
       this.new_line();
 
       this.key_triggered_button( "Look at origin from front", [ "1" ], () =>
@@ -847,8 +844,8 @@ class Movement_Controls extends Scene
           this.matrix().post_multiply( Mat4.rotation( -velocity,   i, 1-i, 0 ) );
           this.inverse().pre_multiply( Mat4.rotation( +velocity,   i, 1-i, 0 ) );
         }
-      this.matrix().post_multiply( Mat4.rotation( -.1 * this.roll,   0,0,1 ) );
-      this.inverse().pre_multiply( Mat4.rotation( +.1 * this.roll,   0,0,1 ) );
+      this.matrix().post_multiply( Mat4.rotation( -.1 * this.roll,0,0, 1 ) );
+      this.inverse().pre_multiply( Mat4.rotation( +.1 * this.roll,0,0, 1 ) );
                                     // Now apply translation movement of the camera, in the newest local coordinate frame.
       this.matrix().post_multiply( Mat4.translation( ...this.thrust.times( -meters_per_frame ) ) );
       this.inverse().pre_multiply( Mat4.translation( ...this.thrust.times( +meters_per_frame ) ) );

@@ -12,23 +12,45 @@ export class Final extends Scene {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
-        this.hasLava = false;
-        this.lit = true;
-        this.animatedLava = false;
+        this.hasLava = true;
+        this.lit = false;
+        this.animatedLava = true;
         this.cube = true;
         this.initial_lava_color = color(1.0, 69/256, 0.0, 1.0);
         this.current_lava_color = this.initial_lava_color;
+        this.speed = vec3(0, 0, 0, 1);
+        this.playerLocation = Mat4.identity().times(Mat4.translation(0, -4.25, -7.5, 1)).times(Mat4.scale(.4, .75, .4, 1));
+        this.playerLocation = this.playerLocation.times(Mat4.rotation(0.5 * Math.PI, 1, 0, 0));
+        this.score = 0;
+        this.lives = 3;
+        this.icecreamList = [];
+        this.icecreamColors = [];
+        this.icecreamSpeeds = [];
+        this.lastSpawnTime = 0;
+        this.gameOver = false;
 
         this.shapes = {
-            sphere: new defs.Subdivision_Sphere(4),
-            cube: new Cube()
+            player: new defs.Cone_Tip(15, 15),
+            cube: new Cube(),
+            icecream: new defs.Subdivision_Sphere(4)
         };
 
         // *** Materials
         this.materials = {
-            phong: new Material(new Phong_Shader(),{
+            phong: new Material(
+            new Phong_Shader(), {
+                color: color(1.0, 1.0, 0, 1.0),
+                ambient: 1, diffusivity: 0, specularity: 0
+            }
+            ),
+            cone: new Material(
+            new Normal_Mapped(),{
                 color: color(1.0,1.0,1.0,1.0),
-                ambient: .0, diffusivity: 1.0, specularity: 0.1}),
+                ambient: 0.8, diffusivity: .1, specularity: .1,
+                albedo: new Texture("assets/waffle_color.jpg", "LINEAR_MIPMAP_LINEAR"),
+                normal: new Texture("assets/waffle_normal.jpg", "LINEAR_MIPMAP_LINEAR")
+                }
+            ),
             normal_mapped_stone: new Material(
             new Normal_Mapped(), {
                 ambient: 0.5, diffusivity: 1.0, specularity: 10,
@@ -48,7 +70,8 @@ export class Final extends Scene {
             ),
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 10), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 30, 10), vec3(0, 10, 0), vec3(0, 1, 0));
+        this.initial_camera_location = this.initial_camera_location.times(Mat4.translation(0, 15, 7.5, 1));
     }
 
     make_control_panel() {
@@ -58,12 +81,34 @@ export class Final extends Scene {
         this.new_line();
         this.key_triggered_button("Toggle Lava Color Blending", ["Control", "3"], () => this.animatedLava = !this.animatedLava);
         this.new_line();
-        this.key_triggered_button("Toggle Cube/Sphere", ["Control", "4"], () => this.cube = !this.cube);
+        this.key_triggered_button( "Forward", [ "w" ], () => this.speed[2] = -.4, undefined, () => this.speed[2] = 0 );
+        this.key_triggered_button( "Back", [ "s" ], () => this.speed[2] = .4, undefined, () => this.speed[2] = 0 );
+        this.key_triggered_button( "Left", [ "a" ], () => this.speed[0] = -.4, undefined, () => this.speed[0] = 0 );
+        this.key_triggered_button( "Right", [ "d" ], () => this.speed[0] = .4, undefined, () => this.speed[0] = 0 );
+        this.new_line();
+        this.key_triggered_button("Restart", ["r"], () => {
+            this.gameOver = false;
+            this.lives = 3;
+            this.score = 0;
+            this.icecreamList = [];
+            this.icecreamColors = [];
+            this.icecreamSpeeds = [];
+        });
     }
 
     interpolate_lava_color(t) {
         let lambda = (1 + Math.cos(t));
-        return (color(1.0, lambda * 40/256, 0, 1,0));
+        return (color(1.0, 20/256 + lambda * 40/256, 0, 1,0));
+    }
+
+    spawnIceCream() {
+        //x between -6.5 to 6.5, z -14 to -1
+        let model_transform = Mat4.identity().times(Mat4.translation(Math.random() * 13 - 6.5, 2, Math.random() * 13 -14, 1)).times(Mat4.scale(0.5, 0.5, 0.5, 1));
+        this.icecreamList.push(model_transform);
+        let icecreamColor = color(0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 1);
+        this.icecreamColors.push(icecreamColor);
+        let speed = -0.15 + Math.random() * 0.1;
+        this.icecreamSpeeds.push(speed);
     }
 
     display(context, program_state) {
@@ -86,11 +131,10 @@ export class Final extends Scene {
         if (this.lit){
             program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
         } else {
-            program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 0)];
+            program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10)];
         }
 
         //Draw
-        model_transform = model_transform.times(Mat4.rotation(t,1,1,1));
 
         if (this.animatedLava) {
             this.current_lava_color = this.interpolate_lava_color(t);
@@ -101,12 +145,62 @@ export class Final extends Scene {
         } else {
             this.activeMaterial = this.materials.normal_mapped_stone;
         }
+        model_transform = model_transform.times(Mat4.translation(0, -5, -7.5, 1)).times(Mat4.scale(7.5, 0.01, 7.5, 1));
+        this.shapes.cube.draw(context, program_state, model_transform, this.activeMaterial);
 
-        if(this.cube) {
-            this.shapes.cube.draw(context, program_state, model_transform, this.activeMaterial);
+        if(this.playerLocation[0][3] > 7.1) {
+            this.playerLocation[0][3] = 7.1;
         }
-        else {
-            this.shapes.sphere.draw(context, program_state, model_transform, this.activeMaterial);
+        else if(this.playerLocation[0][3] < -7.1) {
+            this.playerLocation[0][3] = -7.1;
+        }
+        if(this.playerLocation[2][3] > -0.4) {
+            this.playerLocation[2][3] = -0.4;
+        }
+        else if(this.playerLocation[2][3] < -14.6) {
+            this.playerLocation[2][3] = -14.6;
+        }
+        this.playerLocation = this.playerLocation.times(Mat4.rotation(-0.5 * Math.PI, 1, 0, 0)).times( Mat4.translation(...this.speed) ).times(Mat4.rotation(0.5 * Math.PI, 1, 0, 0));
+        this.shapes.player.draw(context, program_state, this.playerLocation, this.materials.cone);
+        
+        //Game Logic
+        if(this.lives <= 0) {
+            this.gameOver = true;
+            this.icecreamList = [];
+            this.icecreamColors = [];
+            this.icecreamSpeeds = [];
+        }
+        if(t > this.lastSpawnTime + 2 && !this.gameOver) {
+            console.log(this.score);
+            this.lastSpawnTime = t;
+            this.spawnIceCream();
+        }
+        let i = 0;
+        for(i = 0; i < this.icecreamList.length; i++) {
+            let y = this.icecreamList[i][1][3];
+            let x = this.icecreamList[i][0][3];
+            let z = this.icecreamList[i][2][3];
+            let playerX = this.playerLocation[0][3];
+            let playerZ = this.playerLocation[2][3];
+
+            if(y > -5.5 && y < -3.65 && x < playerX + 0.6 && x > playerX - 0.6 && z > playerZ - 0.6 && z < playerZ + 0.6) {
+                this.score = this.score + 1;
+                this.icecreamList.splice(i, 1);
+                this.icecreamColors.splice(i, 1);
+                this.icecreamSpeeds.splice(i, 1);
+            }
+        }
+        for (i = 0; i < this.icecreamList.length; i++) {
+            if(this.icecreamList[i][1][3] < -6.0) {
+                this.lives = this.lives - 1;
+                this.icecreamList.splice(i, 1);
+                this.icecreamColors.splice(i, 1);
+                this.icecreamSpeeds.splice(i, 1);
+            }
+        }
+        for (i = 0; i < this.icecreamList.length; i++) {
+            this.shapes.icecream.draw(context, program_state, this.icecreamList[i], this.materials.phong.override({color: this.icecreamColors[i]}));
+            this.icecreamList[i] = this.icecreamList[i].times(Mat4.translation(0, this.icecreamSpeeds[i], 0, 1));
         }
     }
 }
