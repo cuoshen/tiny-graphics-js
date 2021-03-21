@@ -12,7 +12,11 @@ export class Final extends Scene {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
-        // At the beginning of our program, load one of each of these shape definitions onto the GPU.
+        this.hasLava = false;
+        this.lit = true;
+        this.animatedLava = false;
+        this.current_lava_color = color(1.0, 69/256, 0.0, 1.0);
+
         this.shapes = {
             sphere: new defs.Subdivision_Sphere(4),
             cube: new Cube()
@@ -22,21 +26,22 @@ export class Final extends Scene {
         this.materials = {
             phong: new Material(new Phong_Shader(),{
                 color: color(1.0,1.0,1.0,1.0),
-                ambient: .5, diffusivity: 0.1, specularity: 0.1}),
-            normal_mapped_wood: new Material(
+                ambient: .0, diffusivity: 1.0, specularity: 0.1}),
+            normal_mapped_stone: new Material(
             new Normal_Mapped(), {
-                ambient: .5, diffusivity: 0.1, specularity: 0.1,
-                albedo: new Texture("assets/wood_color.jpg","LINEAR_MIPMAP_LINEAR"),
-                normal: new Texture("assets/wood_normal.jpg", "LINEAR_MIPMAP_LINEAR")
+                ambient: 0.5, diffusivity: 1.0, specularity: 10,
+                albedo: new Texture("assets/rock_color.jpg","LINEAR_MIPMAP_LINEAR"),
+                normal: new Texture("assets/rock_normal.jpg", "LINEAR_MIPMAP_LINEAR")
                 }
             ),
-            bump_mapped_stone: new Material(
+            bump_mapped_lava: new Material(
             new Bump_Mapped(), {
-                ambient: .5, diffusivity: 0.1, specularity: 0.1,
+                ambient: 0.5, diffusivity: 1.0, specularity: 10,
                 albedo: new Texture("assets/rock_color.jpg","LINEAR_MIPMAP_LINEAR"),
                 normal: new Texture("assets/rock_normal.jpg", "LINEAR_MIPMAP_LINEAR"),
                 bump: new Texture("assets/rock_height.png", "LINEAR_MIPMAP_LINEAR"),
-                lava_color: color(1.0, 69/256, 0.0, 1.0)
+                lava_color: color(1.0, 69/256, 0.0, 1.0),
+                lava_threshold: 0.3
                 }
             ),
         }
@@ -45,6 +50,10 @@ export class Final extends Scene {
     }
 
     make_control_panel() {
+        this.key_triggered_button("Toggle Lava", ["Control", "0"], () => this.hasLava = !this.hasLava);
+        this.new_line();
+        this.key_triggered_button("Toggle Highlight", ["Control", "0"], () => this.lit = !this.lit);
+        this.new_line();
     }
 
     display(context, program_state) {
@@ -64,11 +73,20 @@ export class Final extends Scene {
         
         //Lighting
         const light_position = vec4(3, 3, 0, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+        if (this.lit){
+            program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+        } else {
+            program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 0)];
+        }
 
         //Sphere
         model_transform = model_transform.times(Mat4.rotation(t,1,1,1));
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.bump_mapped_stone);
+        if (this.hasLava) {
+            this.activeMaterial = this.materials.bump_mapped_lava;
+        } else {
+            this.activeMaterial = this.materials.normal_mapped_stone;
+        }
+        this.shapes.cube.draw(context, program_state, model_transform, this.activeMaterial);
     }
 }
 
@@ -105,7 +123,7 @@ class Normal_Mapped extends Phong_Shader {
                 vec3 normal = normalize(normal_sample.xyz);
 
                 if( tex_color.w < .01 ) discard;
-                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                gl_FragColor = vec4(tex_color.xyz * ambient, tex_color.w);
                 gl_FragColor.xyz += phong_model_lights( normalize( normal ), vertex_worldspace );
         } `;
     }
@@ -157,6 +175,7 @@ class Bump_Mapped extends Phong_Shader {
             uniform sampler2D normal_map;
             uniform sampler2D bump;
             uniform vec4 lava_color;
+            uniform float lava_threshold;
             
             void main(){
                 vec4 tex_color = texture2D( albedo, f_tex_coord);
@@ -169,12 +188,12 @@ class Bump_Mapped extends Phong_Shader {
                 bumped += N.xyz * bump_sample.x; // bump by true normal
 
                 if( tex_color.w < .01 ) discard;
-                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                gl_FragColor = vec4(tex_color.xyz * ambient, tex_color.w);
                 gl_FragColor.xyz += phong_model_lights( normalize( normal ), bumped );
 
-                float height = length(bump_sample.xyz);
-                if (height < 0.5) {
-                    gl_FragColor = mix(lava_color, vec4(0.0,0.0,0.0,1.0), height*2.0);
+                float height = bump_sample.x;
+                if (height < lava_threshold) {
+                    gl_FragColor = mix(lava_color, vec4(0.0,0.0,0.0,1.0), height*(1.0/lava_threshold));
                 }
         } `;
     }
@@ -204,5 +223,6 @@ class Bump_Mapped extends Phong_Shader {
       }
 
       context.uniform4fv(gpu_addresses.lava_color, material.lava_color);
+      context.uniform1f(gpu_addresses.lava_threshold, material.lava_threshold);
     }
 }
