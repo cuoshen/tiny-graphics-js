@@ -16,6 +16,7 @@ export class Final extends Scene {
         this.lit = true;
         this.animatedLava = false;
         this.cube = true;
+        this.lavaFlow = false;
         this.initial_lava_color = color(1.0, 69/256, 0.0, 1.0);
         this.current_lava_color = this.initial_lava_color;
 
@@ -72,6 +73,8 @@ export class Final extends Scene {
         this.key_triggered_button("Toggle Lava Color Blending", ["Control", "3"], () => this.animatedLava = !this.animatedLava);
         this.new_line();
         this.key_triggered_button("Toggle Cube/Sphere", ["Control", "4"], () => this.cube = !this.cube);
+        this.new_line();
+        this.key_triggered_button("Toggle Lava Flow", ["Control", "4"], () => this.lavaFlow = !this.lavaFlow);
     }
 
     interpolate_lava_color(t) {
@@ -110,7 +113,11 @@ export class Final extends Scene {
         }
 
         if (this.hasLava) {
-            this.activeMaterial = this.materials.flowing_lava.override({lava_color: this.current_lava_color, time: t});
+            if (this.lavaFlow){
+                this.activeMaterial = this.materials.flowing_lava.override({lava_color: this.current_lava_color, time: t});
+            } else {
+                this.activeMaterial = this.materials.bump_mapped_lava.override({lava_color: this.current_lava_color});
+            }
         } else {
             this.activeMaterial = this.materials.normal_mapped_stone;
         }
