@@ -23,6 +23,10 @@ Lava, just like any liquid, behaves in such a way that it fills all the volume b
 
 Given the static lava rendering, additional experimental techniques are also used to animate the result. Firstly, the lava color is interpolated between bright orange and red, linearly with respect to time, giving a "burning" expression to the lava. We also experimented using flow maps to manipulate the uv coordinate per fragment, which is detailed below.
 
+To showcase how our lava can be used as an asset in graphics works such as games and animations, we created a simple interactive game where the player has to pick up scoops of ice cream using a cone before they fall into the lava. Starting with 3 lives, a life is lost when a scoop of ice cream falls into the lava, and the game is over when the player has no more lives. Picking up a scoop of ice cream gives the player a point.
+
+To check for collisions between the ice cream scoops, the cone, we simply checked the xyz coordinates of the objects for values within range. For collisions between the lava and the ice cream scoops, a straightforward y-value check is sufficient. We used 3 arrays to store the transformation matrices, the colors, and the falling speed of the ice cream scoops respectively, as they are chosen using Math.random() within a certain range. When a scoop either falls into the lava or is collected by the player, we remove the element in the 3 arrays at the index that represents that scoop.
+
 ## Advanced features
 
 ### Feature 1: height-generated lava
