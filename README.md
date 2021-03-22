@@ -27,6 +27,8 @@ To showcase how our lava can be used as an asset in graphics works such as games
 
 To check for collisions between the ice cream scoops, the cone, we simply checked the xyz coordinates of the objects for values within range. For collisions between the lava and the ice cream scoops, a straightforward y-value check is sufficient. We used 3 arrays to store the transformation matrices, the colors, and the falling speed of the ice cream scoops respectively, as they are chosen using Math.random() within a certain range. When a scoop either falls into the lava or is collected by the player, we remove the element in the 3 arrays at the index that represents that scoop.
 
+![image](docs/game.png)
+
 ## Advanced features
 
 ### Feature 1: height-generated lava
